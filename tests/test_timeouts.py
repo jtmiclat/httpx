@@ -38,7 +38,7 @@ async def test_connect_timeout(server, backend):
 
 
 async def test_pool_timeout(server, backend):
-    pool_limits = PoolLimits(hard_limit=1, pool_timeout=1e-6)
+    pool_limits = PoolLimits(hard_limit=1, pool_timeout=1e-4)
 
     async with AsyncClient(pool_limits=pool_limits, backend=backend) as client:
         response = await client.get("http://127.0.0.1:8000/", stream=True)

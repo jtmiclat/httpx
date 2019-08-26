@@ -124,7 +124,7 @@ async def test_premature_response_close(server, backend):
 
 
 async def test_keepalive_connection_closed_by_server_is_reestablished(
-    server, restart, backend
+    server, restart_server, backend
 ):
     """
     Upon keep-alive connection closed by remote a new connection
@@ -135,7 +135,7 @@ async def test_keepalive_connection_closed_by_server_is_reestablished(
         await response.read()
 
         # shutdown the server to close the keep-alive connection
-        await restart(server)
+        await restart_server()
 
         response = await http.request("GET", "http://127.0.0.1:8000/")
         await response.read()
@@ -144,7 +144,7 @@ async def test_keepalive_connection_closed_by_server_is_reestablished(
 
 
 async def test_keepalive_http2_connection_closed_by_server_is_reestablished(
-    server, restart, backend
+    server, restart_server, backend
 ):
     """
     Upon keep-alive connection closed by remote a new connection
@@ -155,7 +155,7 @@ async def test_keepalive_http2_connection_closed_by_server_is_reestablished(
         await response.read()
 
         # shutdown the server to close the keep-alive connection
-        await restart(server)
+        await restart_server()
 
         response = await http.request("GET", "http://127.0.0.1:8000/")
         await response.read()
@@ -163,17 +163,21 @@ async def test_keepalive_http2_connection_closed_by_server_is_reestablished(
         assert len(http.keepalive_connections) == 1
 
 
-async def test_connection_closed_free_semaphore_on_acquire(server, restart, backend):
+async def test_connection_closed_free_semaphore_on_acquire(
+    server, restart_server, backend
+):
     """
     Verify that max_connections semaphore is released
     properly on a disconnected connection.
     """
-    async with httpx.ConnectionPool(pool_limits=httpx.PoolLimits(hard_limit=1)) as http:
+    async with httpx.ConnectionPool(
+        pool_limits=httpx.PoolLimits(hard_limit=1), backend=backend
+    ) as http:
         response = await http.request("GET", "http://127.0.0.1:8000/")
         await response.read()
 
         # Close the connection so we're forced to recycle it
-        await restart(server)
+        await restart_server()
 
         response = await http.request("GET", "http://127.0.0.1:8000/")
         assert response.status_code == 200
